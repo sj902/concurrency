@@ -2,27 +2,24 @@ package main
 
 import (
 	"fmt"
-	"runtime"
 	"sync"
+	"time"
 )
 
 func main() {
-	memConsumed := func() uint64 {
-		runtime.GC()
-		var s runtime.MemStats
-		runtime.ReadMemStats(&s)
-		return s.Sys
-	}
-	var c <-chan interface{}
 	var wg sync.WaitGroup
-	noop := func() { wg.Done(); <-c }
-	const numGoroutines = 1e4
-	wg.Add(numGoroutines)
-	before := memConsumed()
-	for i := numGoroutines; i > 0; i-- {
-		go noop()
-	}
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fmt.Println("1st goroutine sleeping...")
+		time.Sleep(1)
+	}()
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		fmt.Println("2nd goroutine sleeping...")
+		time.Sleep(2)
+	}()
 	wg.Wait()
-	after := memConsumed()
-	fmt.Printf("%.3fkb", float64(after-before)/numGoroutines/1000)
+	fmt.Println("All goroutines complete.")
 }
